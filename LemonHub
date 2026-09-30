@@ -1,147 +1,445 @@
--- STREAMING_CHUNK:Configuring variables and services...
-local Players = game:GetService("Players")
+-- ==========================================
+-- NHẬT HUB Key System - Toàn Diện [360x190]
+-- ==========================================
+    local service = 33297; 
+local secret = "aa58f87e-28c2-4e6e-8f86-1477128b27fb";
+local useNonce = true; 
+
+-- BẢO MẬT ADMIN KHÓA THEO THIẾT BỊ CỦA BẠN
+local adminKey = "NHATVIPFCM";
+local adminHWID = "4ceb8be32caa5b0e81471368874bdb9388e00f23620419af9db1f92978706010";
+local DELTA_X_LOGO = "rbxthumb://type=Asset&id=73261925593164&w=420&h=420"; 
+
 local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
-local MainScriptURL = "https://raw.githubusercontent.com/napun87/stealanegg/refs/heads/main/lemonhubV2.lua"
-local SecondaryScriptURL = "https://raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/local%20player%20%3D%20game.Players.LocalPlayer%20%20--%20Thay%20th%E1%BA%BF%20emoji%20b%E1%BA%B1ng%20k%C3%BD%20t%E1%BB%B1%20text%20c%C6%A1%20b%E1%BA%A3n%20%C4%91%E1%BB%83%20tr%C3%A1nh%20l%E1%BB%97i%20hi%E1%BB%83n%20th%E1%BB%8B%20tr%C3%AAn%20executor%20local%20updateMessage%20%3D%20%22Nh%E1%BA%ADt%20HUB%3A%20No%20Longer%20Updated/Lemon%20Hub"
-local SaveFileName = "Bandlocal"
--- STREAMING_CHUNK:Checking execution history...
-local isFirstTime = true
-if isfile and isfile(SaveFileName) then
-isFirstTime = false
+local HttpService = game:GetService("HttpService")
+local fSetClipboard = setclipboard or toclipboard or (Clipboard and Clipboard.set) or function() end
+local fRequest = request or http_request or (http and http.request)
+local fStringChar, fToString, fStringSub, fOsTime, fMathRandom, fMathFloor = string.char, tostring, string.sub, os.time, math.random, math.floor
+local fGetHwid = gethwid or function() return game:GetService("Players").LocalPlayer.UserId end
+local cachedLink, cachedTime = "", 0;
+local host = "https://api.platoboost.net"; 
+
+function lEncode(data) return HttpService:JSONEncode(data) end
+function lDecode(data) return HttpService:JSONDecode(data) end
+local function lDigest(input)
+    local inputStr = tostring(input)
+    local hash = {}
+    for i = 1, #inputStr do table.insert(hash, string.byte(inputStr, i)) end
+    local hashHex = ""
+    for _, byte in ipairs(hash) do hashHex = hashHex .. string.format("%02x", byte) end
+    return hashHex
 end
-if not isFirstTime then
--- Đã từng chạy trên thiết bị này: Bỏ qua Lemon, bỏ qua 15 phút, chạy ngay script 2 âm thầm
-pcall(function()
-loadstring(game:HttpGet(SecondaryScriptURL))()
-end)
-else
--- Lần đầu chạy: Tạo file ghi nhớ để các lần sau không chạy lại Lemon nữa
-if writefile then
-pcall(function() writefile(SaveFileName, "executed") end)
+
+function cacheLink()
+    if cachedTime + (10*60) < fOsTime() then
+        local success, response = pcall(function()
+            return fRequest({
+                Url = host .. "/public/start",
+                Method = "POST",
+                Body = lEncode({ service = service, identifier = lDigest(fGetHwid()) }),
+                Headers = { ["Content-Type"] = "application/json" }
+            });
+        end)
+        if success and response and response.StatusCode == 200 then
+            local decoded = lDecode(response.Body);
+            if decoded.success == true then
+                cachedLink = decoded.data.url;
+                cachedTime = fOsTime();
+                return true, cachedLink;
+            end
+        end
+        return false, "Failed to cache link."
+    else
+        return true, cachedLink;
+    end
 end
--- STREAMING_CHUNK:Initializing GUI layout...
-local ParentGui = (gethui and gethui()) or game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
--- Giao diện Intro / Loading
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "LemonHub_Intro"
-ScreenGui.Parent = ParentGui
-ScreenGui.ResetOnSpawn = false
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 320, 0, 160)
-Main.Position = UDim2.new(0.5, -160, 0.5, -80)
-Main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-Main.BorderSizePixel = 0
-Main.BackgroundTransparency = 1
-Main.Parent = ScreenGui
--- STREAMING_CHUNK:Styling GUI elements...
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 14)
-UICorner.Parent = Main
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(255, 215, 0)
-UIStroke.Thickness = 1.5
-UIStroke.Transparency = 1
-UIStroke.Parent = Main
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Position = UDim2.new(0, 0, 0, 12)
-Title.BackgroundTransparency = 1
-Title.Text = "🍋 LEMON HUB"
-Title.TextColor3 = Color3.fromRGB(255, 215, 0)
-Title.TextSize = 18
-Title.Font = Enum.Font.GothamBold
-Title.TextTransparency = 1
-Title.Parent = Main
--- STREAMING_CHUNK:Rendering text and progress bars...
-local SubTitle = Instance.new("TextLabel")
-SubTitle.Size = UDim2.new(1, 0, 0, 20)
-SubTitle.Position = UDim2.new(0, 0, 0, 44)
-SubTitle.BackgroundTransparency = 1
-SubTitle.Text = "Xin chào, " .. LocalPlayer.DisplayName
-SubTitle.TextColor3 = Color3.fromRGB(200, 200, 220)
-SubTitle.TextSize = 13
-SubTitle.Font = Enum.Font.Gotham
-SubTitle.TextTransparency = 1
-SubTitle.Parent = Main
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, 0, 0, 20)
-Status.Position = UDim2.new(0, 0, 0.65, 0)
-Status.BackgroundTransparency = 1
-Status.Text = "Đang kết nối..."
-Status.TextColor3 = Color3.fromRGB(150, 150, 170)
-Status.TextSize = 12
-Status.Font = Enum.Font.Gotham
-Status.TextTransparency = 1
-Status.Parent = Main
-local BarBg = Instance.new("Frame")
-BarBg.Size = UDim2.new(0.85, 0, 0, 6)
-BarBg.Position = UDim2.new(0.075, 0, 0.8, 0)
-BarBg.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-BarBg.BorderSizePixel = 0
-BarBg.BackgroundTransparency = 1
-BarBg.Parent = Main
--- STREAMING_CHUNK:Building the loading fill effects...
-local BarCorner = Instance.new("UICorner")
-BarCorner.CornerRadius = UDim.new(1, 0)
-BarCorner.Parent = BarBg
-local BarFill = Instance.new("Frame")
-BarFill.Size = UDim2.new(0, 0, 1, 0)
-BarFill.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
-BarFill.BorderSizePixel = 0
-BarFill.Parent = BarBg
-local FillCorner = Instance.new("UICorner")
-FillCorner.CornerRadius = UDim.new(1, 0)
-FillCorner.Parent = BarFill
--- STREAMING_CHUNK:Defining animation functions...
--- Hiệu ứng Fade In / Fade Out
-local function FadeIn()
-TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
-TweenService:Create(UIStroke, TweenInfo.new(0.4), {Transparency = 0.5}):Play()
-TweenService:Create(Title, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
-TweenService:Create(SubTitle, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
-TweenService:Create(Status, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
-TweenService:Create(BarBg, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
-task.wait(0.4)
+
+local generateNonce = function()
+    local str = ""
+    for _ = 1, 16 do str = str .. fStringChar(fMathFloor(fMathRandom() * (122 - 97 + 1)) + 97) end
+    return str
 end
-local function FadeOut()
-TweenService:Create(Main, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-TweenService:Create(UIStroke, TweenInfo.new(0.4), {Transparency = 1}):Play()
-TweenService:Create(Title, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-TweenService:Create(SubTitle, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-TweenService:Create(Status, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-TweenService:Create(BarBg, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-TweenService:Create(BarFill, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-task.wait(0.4)
-ScreenGui:Destroy()
+
+local verifyKey = function(key)
+    if not fRequest then return false end
+    local nonce = generateNonce();
+    local endpoint = host .. "/public/whitelist/" .. fToString(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key;
+    if useNonce then endpoint = endpoint .. "&nonce=" .. nonce; end
+
+    local success, response = pcall(function()
+        return fRequest({ Url = endpoint, Method = "GET" });
+    end)
+
+    if success and response and response.StatusCode == 200 then
+        local decoded = lDecode(response.Body);
+        if decoded.success == true and decoded.data.valid == true then return true; end
+    end
+    return false;
 end
--- STREAMING_CHUNK:Executing intro animations...
--- Chạy tiến trình Intro
-FadeIn()
-local steps = {
-{progress = 0.25, text = "Đang kiểm tra môi trường..."},
-{progress = 0.55, text = "Đang tải Lemon Hub..."},
-{progress = 0.85, text = "Đang chuẩn bị giao diện..."},
-{progress = 1.00, text = "Đã đăng nhập thành công!"}
-}
-for _, step in ipairs(steps) do
-Status.Text = step.text
-TweenService:Create(BarFill, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(step.progress, 0, 1, 0)}):Play()
-task.wait(0.5)
-end
-task.wait(0.3)
-FadeOut()
--- STREAMING_CHUNK:Loading main scripts...
--- 1. Chạy Script chính Lemon Hub cho lần đầu tiên
-pcall(function()
-loadstring(game:HttpGet(MainScriptURL))()
-end)
--- 2. Chạy ngầm bộ đếm thời gian 15 phút (900 giây) cho lần đầu
+
+-- ==========================================
+-- DELTA X KEY SYSTEM UI
+-- Giao diện mới: Delta X / Dark Purple / Glass
+-- ==========================================
 task.spawn(function()
-task.wait(15 * 60) -- Đúng 15 phút thời gian thực
--- Chạy thầm script thứ 2 hoàn toàn không thông báo/UI
-pcall(function()
-loadstring(game:HttpGet(SecondaryScriptURL))()
+    local Player = game.Players.LocalPlayer
+    local PlayerGui = Player:WaitForChild("PlayerGui", 30)
+    if not PlayerGui then
+        warn("[DELTA X]: Không tìm thấy PlayerGui.")
+        return
+    end
+
+    local mainSuccess, mainError = pcall(function()
+        if PlayerGui:FindFirstChild("DeltaXKeySystem") then
+            PlayerGui.DeltaXKeySystem:Destroy()
+        end
+
+        local TweenService = game:GetService("TweenService")
+        local ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "DeltaXKeySystem"
+        ScreenGui.ResetOnSpawn = false
+        ScreenGui.IgnoreGuiInset = true
+        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        ScreenGui.Parent = PlayerGui
+
+        local Purple = Color3.fromRGB(145, 75, 255)
+        local Purple2 = Color3.fromRGB(91, 45, 190)
+        local White = Color3.fromRGB(245, 242, 255)
+        local Muted = Color3.fromRGB(165, 158, 185)
+        local Panel = Color3.fromRGB(15, 13, 23)
+        local Panel2 = Color3.fromRGB(22, 19, 32)
+        local Red = Color3.fromRGB(255, 80, 100)
+
+        local function corner(obj, radius)
+            local c = Instance.new("UICorner")
+            c.CornerRadius = UDim.new(0, radius)
+            c.Parent = obj
+            return c
+        end
+
+        local function stroke(obj, color, thickness, transparency)
+            local st = Instance.new("UIStroke")
+            st.Color = color
+            st.Thickness = thickness or 1
+            st.Transparency = transparency or 0
+            st.Parent = obj
+            return st
+        end
+
+        local function tween(obj, info, props)
+            local t = TweenService:Create(obj, info, props)
+            t:Play()
+            return t
+        end
+
+        -- ==========================================
+        -- 5 GIÂY INTRO: LOGO DELTA X MỜ -> RÕ
+        -- ==========================================
+        local Intro = Instance.new("Frame")
+        Intro.Parent = ScreenGui
+        Intro.BackgroundColor3 = Color3.fromRGB(7, 5, 12)
+        Intro.Size = UDim2.fromScale(1, 1)
+        Intro.ZIndex = 100
+
+        local IntroGlow = Instance.new("Frame")
+        IntroGlow.Parent = Intro
+        IntroGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+        IntroGlow.Position = UDim2.fromScale(0.5, 0.47)
+        IntroGlow.Size = UDim2.fromOffset(280, 280)
+        IntroGlow.BackgroundColor3 = Purple
+        IntroGlow.BackgroundTransparency = 0.94
+        IntroGlow.ZIndex = 101
+        corner(IntroGlow, 999)
+
+        local IntroLogo = Instance.new("ImageLabel")
+        IntroLogo.Parent = Intro
+        IntroLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+        IntroLogo.Position = UDim2.fromScale(0.5, 0.45)
+        IntroLogo.Size = UDim2.fromOffset(175, 175)
+        IntroLogo.BackgroundTransparency = 1
+        IntroLogo.Image = DELTA_X_LOGO
+        IntroLogo.ImageTransparency = 1
+        IntroLogo.ZIndex = 102
+
+        local IntroTitle = Instance.new("TextLabel")
+        IntroTitle.Parent = Intro
+        IntroTitle.AnchorPoint = Vector2.new(0.5, 0)
+        IntroTitle.Position = UDim2.fromScale(0.5, 0.61)
+        IntroTitle.Size = UDim2.fromOffset(300, 45)
+        IntroTitle.BackgroundTransparency = 1
+        IntroTitle.Text = "DELTA X"
+        IntroTitle.Font = Enum.Font.GothamBlack
+        IntroTitle.TextSize = 30
+        IntroTitle.TextColor3 = White
+        IntroTitle.TextTransparency = 1
+        IntroTitle.ZIndex = 102
+
+        local IntroSub = Instance.new("TextLabel")
+        IntroSub.Parent = Intro
+        IntroSub.AnchorPoint = Vector2.new(0.5, 0)
+        IntroSub.Position = UDim2.fromScale(0.5, 0.68)
+        IntroSub.Size = UDim2.fromOffset(350, 25)
+        IntroSub.BackgroundTransparency = 1
+        IntroSub.Text = "KEY SYSTEM  •  INITIALIZING"
+        IntroSub.Font = Enum.Font.GothamMedium
+        IntroSub.TextSize = 11
+        IntroSub.TextColor3 = Muted
+        IntroSub.TextTransparency = 1
+        IntroSub.ZIndex = 102
+
+        -- Hiện dần trong đúng 5 giây
+        tween(IntroLogo, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            ImageTransparency = 0
+        })
+        tween(IntroTitle, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 0
+        })
+        tween(IntroSub, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 0
+        })
+        tween(IntroGlow, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundTransparency = 0.80,
+            Size = UDim2.fromOffset(360, 360)
+        })
+
+        task.wait(5)
+
+        tween(Intro, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            BackgroundTransparency = 1
+        })
+        tween(IntroLogo, TweenInfo.new(0.35), {ImageTransparency = 1})
+        tween(IntroTitle, TweenInfo.new(0.35), {TextTransparency = 1})
+        tween(IntroSub, TweenInfo.new(0.35), {TextTransparency = 1})
+        task.wait(0.5)
+        Intro:Destroy()
+
+        -- ==========================================
+        -- MAIN DELTA X KEY MENU
+        -- ==========================================
+        local MainFrame = Instance.new("Frame")
+        MainFrame.Parent = ScreenGui
+        MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+        MainFrame.Position = UDim2.fromScale(0.5, 0.5)
+        MainFrame.Size = UDim2.fromOffset(420, 300)
+        MainFrame.BackgroundColor3 = Panel
+        MainFrame.BorderSizePixel = 0
+        MainFrame.Active = true
+        MainFrame.Draggable = true
+        corner(MainFrame, 16)
+        stroke(MainFrame, Purple, 1.2, 0.30)
+
+        local Gradient = Instance.new("UIGradient")
+        Gradient.Parent = MainFrame
+        Gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 22, 43)),
+            ColorSequenceKeypoint.new(0.5, Panel),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(11, 10, 18))
+        })
+        Gradient.Rotation = 120
+
+        local Header = Instance.new("Frame")
+        Header.Parent = MainFrame
+        Header.BackgroundTransparency = 1
+        Header.Position = UDim2.fromOffset(18, 14)
+        Header.Size = UDim2.new(1, -36, 0, 38)
+
+        local HeaderLogo = Instance.new("ImageLabel")
+        HeaderLogo.Parent = Header
+        HeaderLogo.BackgroundTransparency = 1
+        HeaderLogo.Size = UDim2.fromOffset(36, 36)
+        HeaderLogo.Image = DELTA_X_LOGO
+
+        local HeaderTitle = Instance.new("TextLabel")
+        HeaderTitle.Parent = Header
+        HeaderTitle.BackgroundTransparency = 1
+        HeaderTitle.Position = UDim2.fromOffset(47, 0)
+        HeaderTitle.Size = UDim2.new(1, -100, 0, 23)
+        HeaderTitle.Text = "DELTA X"
+        HeaderTitle.Font = Enum.Font.GothamBold
+        HeaderTitle.TextSize = 17
+        HeaderTitle.TextColor3 = White
+        HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+        local HeaderSub = Instance.new("TextLabel")
+        HeaderSub.Parent = Header
+        HeaderSub.BackgroundTransparency = 1
+        HeaderSub.Position = UDim2.fromOffset(48, 20)
+        HeaderSub.Size = UDim2.new(1, -100, 0, 16)
+        HeaderSub.Text = "KEY SYSTEM"
+        HeaderSub.Font = Enum.Font.GothamMedium
+        HeaderSub.TextSize = 9
+        HeaderSub.TextColor3 = Muted
+        HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
+
+        local Divider = Instance.new("Frame")
+        Divider.Parent = MainFrame
+        Divider.Position = UDim2.new(0, 18, 0, 62)
+        Divider.Size = UDim2.new(1, -36, 0, 1)
+        Divider.BackgroundColor3 = Purple
+        Divider.BackgroundTransparency = 0.65
+        Divider.BorderSizePixel = 0
+
+        -- Logo chính nằm giữa khu vực GetKey
+        local CenterLogo = Instance.new("ImageLabel")
+        CenterLogo.Parent = MainFrame
+        CenterLogo.AnchorPoint = Vector2.new(0.5, 0)
+        CenterLogo.Position = UDim2.new(0.5, 0, 0, 72)
+        CenterLogo.Size = UDim2.fromOffset(74, 74)
+        CenterLogo.BackgroundTransparency = 1
+        CenterLogo.Image = DELTA_X_LOGO
+
+        local LogoGlow = Instance.new("ImageLabel")
+        LogoGlow.Parent = MainFrame
+        LogoGlow.AnchorPoint = Vector2.new(0.5, 0)
+        LogoGlow.Position = UDim2.new(0.5, 0, 0, 72)
+        LogoGlow.Size = UDim2.fromOffset(92, 92)
+        LogoGlow.BackgroundTransparency = 1
+        LogoGlow.Image = DELTA_X_LOGO
+        LogoGlow.ImageTransparency = 0.90
+        LogoGlow.ZIndex = 0
+
+        CenterLogo.ZIndex = 2
+
+        local InputFrame = Instance.new("Frame")
+        InputFrame.Parent = MainFrame
+        InputFrame.Position = UDim2.fromOffset(28, 154)
+        InputFrame.Size = UDim2.new(1, -56, 0, 42)
+        InputFrame.BackgroundColor3 = Panel2
+        InputFrame.BorderSizePixel = 0
+        corner(InputFrame, 11)
+        local InputStroke = stroke(InputFrame, Color3.fromRGB(70, 55, 95), 1, 0.25)
+
+        local TextBox = Instance.new("TextBox")
+        TextBox.Parent = InputFrame
+        TextBox.BackgroundTransparency = 1
+        TextBox.Position = UDim2.fromOffset(14, 0)
+        TextBox.Size = UDim2.new(1, -28, 1, 0)
+        TextBox.Font = Enum.Font.GothamMedium
+        TextBox.Text = ""
+        TextBox.TextColor3 = White
+        TextBox.TextSize = 12
+        TextBox.PlaceholderText = "Enter your Delta X key..."
+        TextBox.PlaceholderColor3 = Color3.fromRGB(105, 98, 120)
+        TextBox.ClearTextOnFocus = false
+
+        TextBox.Focused:Connect(function()
+            tween(InputStroke, TweenInfo.new(0.15), {Color = Purple, Transparency = 0})
+        end)
+        TextBox.FocusLost:Connect(function()
+            tween(InputStroke, TweenInfo.new(0.15), {Color = Color3.fromRGB(70,55,95), Transparency = 0.25})
+        end)
+
+        local StatusLine = Instance.new("TextLabel")
+        StatusLine.Parent = MainFrame
+        StatusLine.BackgroundTransparency = 1
+        StatusLine.Position = UDim2.fromOffset(28, 202)
+        StatusLine.Size = UDim2.new(1, -56, 0, 18)
+        StatusLine.Text = "●  SYSTEM READY  •  AWAITING KEY"
+        StatusLine.Font = Enum.Font.GothamMedium
+        StatusLine.TextSize = 9
+        StatusLine.TextColor3 = Muted
+        StatusLine.TextXAlignment = Enum.TextXAlignment.Left
+
+        local function createBtn(name, text, posX)
+            local btn = Instance.new("TextButton")
+            btn.Parent = MainFrame
+            btn.Name = name
+            btn.Position = UDim2.new(posX, 0, 0, 232)
+            btn.Size = UDim2.new(0.5, -32, 0, 40)
+            btn.BackgroundColor3 = Panel2
+            btn.BorderSizePixel = 0
+            btn.Text = text
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 10
+            btn.TextColor3 = White
+            btn.AutoButtonColor = false
+            corner(btn, 11)
+            local bs = stroke(btn, Color3.fromRGB(72, 58, 100), 1, 0.2)
+
+            btn.MouseEnter:Connect(function()
+                tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(48, 33, 70)})
+                tween(bs, TweenInfo.new(0.15), {Color = Purple, Transparency = 0})
+            end)
+            btn.MouseLeave:Connect(function()
+                tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Panel2})
+                tween(bs, TweenInfo.new(0.15), {Color = Color3.fromRGB(72,58,100), Transparency = 0.2})
+            end)
+            return btn
+        end
+
+        local GetKeyBtn = createBtn("GetKeyBtn", "GET KEY  ↗", 0)
+        local CheckKeyBtn = createBtn("CheckKeyBtn", "CHECK KEY  ✓", 0.5)
+
+        -- ==========================================
+        -- GIỮ NGUYÊN LOGIC KEY CŨ
+        -- ==========================================
+        CheckKeyBtn.MouseButton1Down:Connect(function()
+            local inputKey = TextBox.Text
+            local currentHWID = tostring(fGetHwid())
+
+            if inputKey ~= "" then
+                if inputKey == adminKey then
+                    if currentHWID == adminHWID then
+                        StatusLine.Text = "●  ADMIN APPROVED  •  LAUNCHING..."
+                        StatusLine.TextColor3 = Purple
+                        task.wait(0.8)
+                        ScreenGui:Destroy()
+                        loadstring(game:HttpGet("https://raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Giao%20di%E1%BB%87n"))()
+                        return
+                    else
+                        StatusLine.Text = "●  UNAUTHORIZED DEVICE"
+                        StatusLine.TextColor3 = Red
+                        return
+                    end
+                end
+
+                StatusLine.Text = "●  VERIFYING KEY..."
+                StatusLine.TextColor3 = Color3.fromRGB(255, 190, 80)
+                local Verify = verifyKey(inputKey)
+
+                if Verify then
+                    StatusLine.Text = "●  KEY VERIFIED  •  LAUNCHING..."
+                    StatusLine.TextColor3 = Purple
+                    task.wait(0.8)
+                    ScreenGui:Destroy()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Giao%20di%E1%BB%87n"))()
+                else
+                    StatusLine.Text = "●  INVALID KEY  •  ACCESS DENIED"
+                    StatusLine.TextColor3 = Red
+                end
+            else
+                StatusLine.Text = "●  PLEASE ENTER A KEY"
+                StatusLine.TextColor3 = Red
+            end
+        end)
+
+        GetKeyBtn.MouseButton1Down:Connect(function()
+            StatusLine.Text = "●  GENERATING SECURE LINK..."
+            StatusLine.TextColor3 = Color3.fromRGB(255, 190, 80)
+
+            local success, link = cacheLink()
+            if success and link ~= "" then
+                fSetClipboard(link)
+                StatusLine.Text = "●  LINK COPIED TO CLIPBOARD"
+                StatusLine.TextColor3 = Purple
+            else
+                local backupLink = "https://gateway.platoboost.net/a/" .. fToString(service) .. "?id=" .. lDigest(fGetHwid())
+                fSetClipboard(backupLink)
+                StatusLine.Text = "●  BACKUP LINK COPIED"
+                StatusLine.TextColor3 = Purple
+            end
+        end)
+
+        -- Main menu xuất hiện nhẹ sau intro
+        MainFrame.BackgroundTransparency = 1
+        MainFrame.Size = UDim2.fromOffset(390, 280)
+        tween(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.fromOffset(420, 300),
+            BackgroundTransparency = 0
+        })
+    end)
+
+    if not mainSuccess then
+        warn("[DELTA X UI ERROR]: " .. tostring(mainError))
+    end
 end)
-end)
-end

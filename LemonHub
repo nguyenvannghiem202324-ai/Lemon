@@ -223,8 +223,9 @@ task.spawn(function()
         MainFrame.Size = UDim2.fromOffset(420, 300)
         MainFrame.BackgroundColor3 = Panel
         MainFrame.BorderSizePixel = 0
-        MainFrame.Active = true
-        MainFrame.Draggable = true
+        -- Khóa menu cố định trên màn hình, không cho kéo/di chuyển
+        MainFrame.Active = false
+        MainFrame.Draggable = false
         corner(MainFrame, 16)
         stroke(MainFrame, Purple, 1.2, 0.30)
 

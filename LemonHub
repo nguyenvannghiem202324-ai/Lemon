@@ -17,7 +17,44 @@ local fRequest = request or http_request or (http and http.request)
 local fStringChar, fToString, fStringSub, fOsTime, fMathRandom, fMathFloor = string.char, tostring, string.sub, os.time, math.random, math.floor
 local fGetHwid = gethwid or function() return game:GetService("Players").LocalPlayer.UserId end
 local cachedLink, cachedTime = "", 0;
-local host = "https://api.platoboost.net"; 
+local host = "https://api.platoboost.net";
+
+-- ==========================================
+-- SAVE KEY / AUTO ACTIVATE
+-- ==========================================
+local KEY_FILE = "DeltaX_SavedKey.txt"
+local AUTO_FILE = "DeltaX_AutoActivate.txt"
+local function canFileIO()
+    return type(readfile) == "function" and type(writefile) == "function"
+end
+local function saveKey(key)
+    if not canFileIO() or not key or key == "" then return false end
+    local ok = pcall(function() writefile(KEY_FILE, tostring(key)) end)
+    return ok
+end
+local function loadSavedKey()
+    if not canFileIO() or not isfile then return "" end
+    local ok, value = pcall(function()
+        if isfile(KEY_FILE) then return readfile(KEY_FILE) end
+        return ""
+    end)
+    if ok and type(value) == "string" then return value end
+    return ""
+end
+local function saveAutoActivate(enabled)
+    if not canFileIO() then return false end
+    local ok = pcall(function() writefile(AUTO_FILE, enabled and "1" or "0") end)
+    return ok
+end
+local function loadAutoActivate()
+    if not canFileIO() or not isfile then return true end
+    local ok, value = pcall(function()
+        if isfile(AUTO_FILE) then return readfile(AUTO_FILE) end
+        return "1"
+    end)
+    return ok and value ~= "0"
+end
+
 
 function lEncode(data) return HttpService:JSONEncode(data) end
 function lDecode(data) return HttpService:JSONDecode(data) end
@@ -109,6 +146,7 @@ task.spawn(function()
         local Panel = Color3.fromRGB(15, 13, 23)
         local Panel2 = Color3.fromRGB(22, 19, 32)
         local Red = Color3.fromRGB(255, 80, 100)
+        local AutoActivate = loadAutoActivate()
 
         local function corner(obj, radius)
             local c = Instance.new("UICorner")
@@ -330,10 +368,69 @@ task.spawn(function()
             tween(InputStroke, TweenInfo.new(0.15), {Color = Color3.fromRGB(70,55,95), Transparency = 0.25})
         end)
 
-        local StatusLine = Instance.new("TextLabel")
+        local StatusLine
+
+        -- Save Key / Auto Activate controls
+        local SaveKeyBtn = Instance.new("TextButton")
+        SaveKeyBtn.Parent = MainFrame
+        SaveKeyBtn.Position = UDim2.fromOffset(28, 198)
+        SaveKeyBtn.Size = UDim2.fromOffset(92, 24)
+        SaveKeyBtn.BackgroundColor3 = Panel2
+        SaveKeyBtn.BorderSizePixel = 0
+        SaveKeyBtn.Text = "SAVE KEY"
+        SaveKeyBtn.Font = Enum.Font.GothamBold
+        SaveKeyBtn.TextSize = 8
+        SaveKeyBtn.TextColor3 = White
+        SaveKeyBtn.AutoButtonColor = false
+        corner(SaveKeyBtn, 8)
+        stroke(SaveKeyBtn, Color3.fromRGB(72,58,100), 1, 0.2)
+
+        local AutoBtn = Instance.new("TextButton")
+        AutoBtn.Parent = MainFrame
+        AutoBtn.Position = UDim2.fromOffset(128, 198)
+        AutoBtn.Size = UDim2.fromOffset(142, 24)
+        AutoBtn.BackgroundColor3 = Panel2
+        AutoBtn.BorderSizePixel = 0
+        AutoBtn.Font = Enum.Font.GothamBold
+        AutoBtn.TextSize = 8
+        AutoBtn.TextColor3 = White
+        AutoBtn.AutoButtonColor = false
+        corner(AutoBtn, 8)
+
+        local function refreshAutoButton()
+            AutoBtn.Text = AutoActivate and "AUTO ACTIVATE  ✓" or "AUTO ACTIVATE  ×"
+            AutoBtn.BackgroundColor3 = AutoActivate and Color3.fromRGB(42, 29, 62) or Panel2
+        end
+        refreshAutoButton()
+
+        SaveKeyBtn.MouseButton1Down:Connect(function()
+            local key = TextBox.Text
+            if key == "" then
+                StatusLine.Text = "●  ENTER A KEY FIRST"
+                StatusLine.TextColor3 = Red
+                return
+            end
+            if saveKey(key) then
+                StatusLine.Text = "●  KEY SAVED SUCCESSFULLY"
+                StatusLine.TextColor3 = Purple
+            else
+                StatusLine.Text = "●  SAVE KEY NOT SUPPORTED"
+                StatusLine.TextColor3 = Red
+            end
+        end)
+
+        AutoBtn.MouseButton1Down:Connect(function()
+            AutoActivate = not AutoActivate
+            saveAutoActivate(AutoActivate)
+            refreshAutoButton()
+            StatusLine.Text = AutoActivate and "●  AUTO ACTIVATE ENABLED" or "●  AUTO ACTIVATE DISABLED"
+            StatusLine.TextColor3 = AutoActivate and Purple or Muted
+        end)
+
+        StatusLine = Instance.new("TextLabel")
         StatusLine.Parent = MainFrame
         StatusLine.BackgroundTransparency = 1
-        StatusLine.Position = UDim2.fromOffset(28, 202)
+        StatusLine.Position = UDim2.fromOffset(28, 226)
         StatusLine.Size = UDim2.new(1, -56, 0, 18)
         StatusLine.Text = "●  SYSTEM READY  •  AWAITING KEY"
         StatusLine.Font = Enum.Font.GothamMedium
@@ -345,7 +442,7 @@ task.spawn(function()
             local btn = Instance.new("TextButton")
             btn.Parent = MainFrame
             btn.Name = name
-            btn.Position = UDim2.new(posX, 0, 0, 232)
+            btn.Position = UDim2.new(posX, 0, 0, 252)
             btn.Size = UDim2.new(0.5, -32, 0, 40)
             btn.BackgroundColor3 = Panel2
             btn.BorderSizePixel = 0
@@ -381,6 +478,7 @@ task.spawn(function()
             if inputKey ~= "" then
                 if inputKey == adminKey then
                     if currentHWID == adminHWID then
+                        saveKey(inputKey)
                         StatusLine.Text = "●  ADMIN APPROVED  •  LAUNCHING..."
                         StatusLine.TextColor3 = Purple
                         task.wait(0.8)
@@ -399,6 +497,10 @@ task.spawn(function()
                 local Verify = verifyKey(inputKey)
 
                 if Verify then
+                    saveKey(inputKey)
+                    if not AutoActivate then
+                        saveAutoActivate(false)
+                    end
                     StatusLine.Text = "●  KEY VERIFIED  •  LAUNCHING..."
                     StatusLine.TextColor3 = Purple
                     task.wait(0.8)
@@ -430,6 +532,39 @@ task.spawn(function()
                 StatusLine.TextColor3 = Purple
             end
         end)
+
+        -- ==========================================
+        -- AUTO ACTIVATE KEY ĐÃ LƯU
+        -- ==========================================
+        if AutoActivate then
+            local savedKey = loadSavedKey()
+            if savedKey ~= "" then
+                TextBox.Text = savedKey
+                task.spawn(function()
+                    task.wait(0.45)
+                    StatusLine.Text = "●  AUTO VERIFYING SAVED KEY..."
+                    StatusLine.TextColor3 = Color3.fromRGB(255, 190, 80)
+                    local verified = false
+                    if savedKey == adminKey then
+                        verified = (tostring(fGetHwid()) == adminHWID)
+                    else
+                        verified = verifyKey(savedKey)
+                    end
+                    if verified then
+                        StatusLine.Text = "●  SAVED KEY VERIFIED  •  LAUNCHING..."
+                        StatusLine.TextColor3 = Purple
+                        task.wait(0.8)
+                        if ScreenGui.Parent then ScreenGui:Destroy() end
+                        pcall(function()
+                            loadstring(game:HttpGet("https://raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Giao%20di%E1%BB%87n"))()
+                        end)
+                    else
+                        StatusLine.Text = "●  SAVED KEY INVALID  •  ENTER A NEW KEY"
+                        StatusLine.TextColor3 = Red
+                    end
+                end)
+            end
+        end
 
         -- Main menu xuất hiện nhẹ sau intro
         MainFrame.BackgroundTransparency = 1

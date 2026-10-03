@@ -1,7 +1,53 @@
 -- ==========================================
+-- BẢO MẬT: ĐÁNH CHẶN SCRIPT LẠ
+-- ==========================================
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Danh sách 3 URL chính thức của bạn
+local allowedScriptURLs = {
+    "raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Lemon%20Hub",
+    "raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Giao%20di%E1%BB%87n",
+    "raw.githubusercontent.com/nguyenvannghiem202324-ai/Lemon/refs/heads/main/LemonHub"
+}
+
+-- Hàm kiểm tra xem URL có nằm trong danh sách cho phép không
+local function isURLAllowed(urlToCheck)
+    if type(urlToCheck) ~= "string" then return false end
+    
+    for _, allowedURL in ipairs(allowedScriptURLs) do
+        -- Nếu URL người chơi chạy chứa 1 trong 3 link của bạn thì hợp lệ
+        if string.find(urlToCheck, allowedURL, 1, true) then
+            return true 
+        end
+    end
+    return false 
+end
+
+-- Đánh chặn hàm HttpGet
+local oldHttpGet
+oldHttpGet = hookfunction(game.HttpGet, function(self, url, ...)
+    if type(url) == "string" and not isURLAllowed(url) then
+        LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
+        return "" 
+    end
+    return oldHttpGet(self, url, ...)
+end)
+
+-- Đánh chặn hàm HttpGetAsync
+local oldHttpGetAsync
+oldHttpGetAsync = hookfunction(game.HttpGetAsync, function(self, url, ...)
+    if type(url) == "string" and not isURLAllowed(url) then
+        LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
+        return ""
+    end
+    return oldHttpGetAsync(self, url, ...)
+end)
+
+-- ==========================================
 -- NHẬT HUB Key System - Toàn Diện [360x190]
 -- ==========================================
-    local service = 33297; 
+local service = 33297; 
 local secret = "aa58f87e-28c2-4e6e-8f86-1477128b27fb";
 local useNonce = true; 
 
@@ -54,7 +100,6 @@ local function loadAutoActivate()
     end)
     return ok and value ~= "0"
 end
-
 
 function lEncode(data) return HttpService:JSONEncode(data) end
 function lDecode(data) return HttpService:JSONDecode(data) end
@@ -261,7 +306,6 @@ task.spawn(function()
         MainFrame.Size = UDim2.fromOffset(420, 300)
         MainFrame.BackgroundColor3 = Panel
         MainFrame.BorderSizePixel = 0
-        -- Khóa menu cố định trên màn hình, không cho kéo/di chuyển
         MainFrame.Active = false
         MainFrame.Draggable = false
         corner(MainFrame, 16)
@@ -318,7 +362,6 @@ task.spawn(function()
         Divider.BackgroundTransparency = 0.65
         Divider.BorderSizePixel = 0
 
-        -- Logo chính nằm giữa khu vực GetKey
         local CenterLogo = Instance.new("ImageLabel")
         CenterLogo.Parent = MainFrame
         CenterLogo.AnchorPoint = Vector2.new(0.5, 0)
@@ -326,6 +369,7 @@ task.spawn(function()
         CenterLogo.Size = UDim2.fromOffset(74, 74)
         CenterLogo.BackgroundTransparency = 1
         CenterLogo.Image = DELTA_X_LOGO
+        CenterLogo.ZIndex = 2
 
         local LogoGlow = Instance.new("ImageLabel")
         LogoGlow.Parent = MainFrame
@@ -336,8 +380,6 @@ task.spawn(function()
         LogoGlow.Image = DELTA_X_LOGO
         LogoGlow.ImageTransparency = 0.90
         LogoGlow.ZIndex = 0
-
-        CenterLogo.ZIndex = 2
 
         local InputFrame = Instance.new("Frame")
         InputFrame.Parent = MainFrame
@@ -370,7 +412,6 @@ task.spawn(function()
 
         local StatusLine
 
-        -- Save Key / Auto Activate controls
         local SaveKeyBtn = Instance.new("TextButton")
         SaveKeyBtn.Parent = MainFrame
         SaveKeyBtn.Position = UDim2.fromOffset(28, 198)
@@ -469,7 +510,7 @@ task.spawn(function()
         local CheckKeyBtn = createBtn("CheckKeyBtn", "CHECK KEY  ✓", 0.5)
 
         -- ==========================================
-        -- GIỮ NGUYÊN LOGIC KEY CŨ
+        -- LOGIC KIỂM TRA KEY
         -- ==========================================
         CheckKeyBtn.MouseButton1Down:Connect(function()
             local inputKey = TextBox.Text
@@ -566,7 +607,6 @@ task.spawn(function()
             end
         end
 
-        -- Main menu xuất hiện nhẹ sau intro
         MainFrame.BackgroundTransparency = 1
         MainFrame.Size = UDim2.fromOffset(390, 280)
         tween(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {

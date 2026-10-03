@@ -28,7 +28,7 @@ end
 local oldHttpGet
 oldHttpGet = hookfunction(game.HttpGet, function(self, url, ...)
     if type(url) == "string" and not isURLAllowed(url) then
-        LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
+        LocalPlayer:Kick("Delta x: Vui lòng không dùng chung với script khác! lần sau sẽ là band vĩnh viễn.")
         return "" 
     end
     return oldHttpGet(self, url, ...)

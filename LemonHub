@@ -1,22 +1,36 @@
 -- ==========================================
--- BẢO MẬT: ĐÁNH CHẶN SCRIPT LẠ
+-- BẢO MẬT: ĐÁNH CHẶN SCRIPT LẠ & BLACKLIST
 -- ==========================================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Danh sách 3 URL chính thức của bạn
+-- Danh sách URL bị CẤM NGẶT (Blacklist) - Dành riêng cho các script muốn hiện thông báo kick cụ thể
+local blacklistedScriptURLs = {
+    "raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"
+}
+
+-- Danh sách 3 URL chính thức của bạn (Whitelist)
 local allowedScriptURLs = {
-    "raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Lemon%20Hub",
+    "raw.githubusercontent.com/napun87/stealanegg/refs/heads/main/lemonhubV2.lua",
     "raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Giao%20di%E1%BB%87n",
     "raw.githubusercontent.com/nguyenvannghiem202324-ai/Lemon/refs/heads/main/LemonHub"
 }
 
--- Hàm kiểm tra xem URL có nằm trong danh sách cho phép không
+-- Hàm kiểm tra Blacklist
+local function isURLBlacklisted(urlToCheck)
+    if type(urlToCheck) ~= "string" then return false end
+    for _, blacklistedURL in ipairs(blacklistedScriptURLs) do
+        if string.find(urlToCheck, blacklistedURL, 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Hàm kiểm tra Whitelist
 local function isURLAllowed(urlToCheck)
     if type(urlToCheck) ~= "string" then return false end
-    
     for _, allowedURL in ipairs(allowedScriptURLs) do
-        -- Nếu URL người chơi chạy chứa 1 trong 3 link của bạn thì hợp lệ
         if string.find(urlToCheck, allowedURL, 1, true) then
             return true 
         end
@@ -27,9 +41,17 @@ end
 -- Đánh chặn hàm HttpGet
 local oldHttpGet
 oldHttpGet = hookfunction(game.HttpGet, function(self, url, ...)
-    if type(url) == "string" and not isURLAllowed(url) then
-        LocalPlayer:Kick("Delta x: Vui lòng không dùng chung với script khác! lần sau sẽ là band vĩnh viễn.")
-        return "" 
+    if type(url) == "string" then
+        -- Ưu tiên check Blacklist trước để hiện thông báo Kick riêng biệt
+        if isURLBlacklisted(url) then
+            LocalPlayer:Kick("Bảo mật: Phát hiện gian lận sử dụng FlyGuiV3! Cấm sử dụng script này.")
+            return ""
+        end
+        -- Check Whitelist (Nếu không nằm trong 3 link của bạn thì cũng bị Kick)
+        if not isURLAllowed(url) then
+            LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
+            return "" 
+        end
     end
     return oldHttpGet(self, url, ...)
 end)
@@ -37,9 +59,15 @@ end)
 -- Đánh chặn hàm HttpGetAsync
 local oldHttpGetAsync
 oldHttpGetAsync = hookfunction(game.HttpGetAsync, function(self, url, ...)
-    if type(url) == "string" and not isURLAllowed(url) then
-        LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
-        return ""
+    if type(url) == "string" then
+        if isURLBlacklisted(url) then
+            LocalPlayer:Kick("Bảo mật: Phát hiện gian lận sử dụng FlyGuiV3! Cấm sử dụng script này.")
+            return ""
+        end
+        if not isURLAllowed(url) then
+            LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
+            return ""
+        end
     end
     return oldHttpGetAsync(self, url, ...)
 end)
@@ -270,7 +298,6 @@ task.spawn(function()
         IntroSub.TextTransparency = 1
         IntroSub.ZIndex = 102
 
-        -- Hiện dần trong đúng 5 giây
         tween(IntroLogo, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             ImageTransparency = 0
         })

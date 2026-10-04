@@ -1,17 +1,17 @@
 -- ==========================================
--- BẢO MẬT: ĐÁNH CHẶN SCRIPT LẠ & BLACKLIST
+-- BẢO MẬT: ĐÁNH CHẶN SCRIPT LẠ & BLACKLIST (Dùng hookmetamethod)
 -- ==========================================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Danh sách URL bị CẤM NGẶT (Blacklist) - Dành riêng cho các script muốn hiện thông báo kick cụ thể
+-- Danh sách URL bị CẤM NGẶT (Blacklist) - Dành riêng cho các script muốn kick cụ thể
 local blacklistedScriptURLs = {
     "raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"
 }
 
 -- Danh sách 3 URL chính thức của bạn (Whitelist)
 local allowedScriptURLs = {
-    "raw.githubusercontent.com/napun87/stealanegg/refs/heads/main/lemonhubV2.lua",
+    "raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Lemon%20Hub",
     "raw.githubusercontent.com/nguyenvannghiem202324-ai/Script/refs/heads/main/Giao%20di%E1%BB%87n",
     "raw.githubusercontent.com/nguyenvannghiem202324-ai/Lemon/refs/heads/main/LemonHub"
 }
@@ -38,38 +38,33 @@ local function isURLAllowed(urlToCheck)
     return false 
 end
 
--- Đánh chặn hàm HttpGet
-local oldHttpGet
-oldHttpGet = hookfunction(game.HttpGet, function(self, url, ...)
-    if type(url) == "string" then
-        -- Ưu tiên check Blacklist trước để hiện thông báo Kick riêng biệt
-        if isURLBlacklisted(url) then
-            LocalPlayer:Kick("Bảo mật: Phát hiện gian lận sử dụng FlyGuiV3! Cấm sử dụng script này.")
-            return ""
-        end
-        -- Check Whitelist (Nếu không nằm trong 3 link của bạn thì cũng bị Kick)
-        if not isURLAllowed(url) then
-            LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
-            return "" 
-        end
-    end
-    return oldHttpGet(self, url, ...)
-end)
-
--- Đánh chặn hàm HttpGetAsync
-local oldHttpGetAsync
-oldHttpGetAsync = hookfunction(game.HttpGetAsync, function(self, url, ...)
-    if type(url) == "string" then
-        if isURLBlacklisted(url) then
-            LocalPlayer:Kick("Bảo mật: Phát hiện gian lận sử dụng FlyGuiV3! Cấm sử dụng script này.")
-            return ""
-        end
-        if not isURLAllowed(url) then
-            LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
-            return ""
+-- Sử dụng hookmetamethod để chặn namecall (Cách này chặn game:HttpGet cực mạnh)
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    
+    -- Chỉ kiểm tra khi đối tượng gọi là 'game' và phương thức là HttpGet/HttpGetAsync
+    if self == game and (method == "HttpGet" or method == "HttpGetAsync") then
+        local url = args[1]
+        
+        if type(url) == "string" then
+            -- 1. Ưu tiên check Blacklist
+            if isURLBlacklisted(url) then
+                LocalPlayer:Kick("Bảo mật: Phát hiện gian lận sử dụng FlyGuiV3! Cấm sử dụng script này.")
+                return ""
+            end
+            
+            -- 2. Check Whitelist
+            if not isURLAllowed(url) then
+                LocalPlayer:Kick("Bảo mật: Phát hiện chạy script lạ! Vui lòng không dùng chung với script khác.")
+                return "" 
+            end
         end
     end
-    return oldHttpGetAsync(self, url, ...)
+    
+    -- Trả về phương thức gốc nếu hợp lệ
+    return oldNamecall(self, ...)
 end)
 
 -- ==========================================
@@ -189,7 +184,6 @@ end
 
 -- ==========================================
 -- DELTA X KEY SYSTEM UI
--- Giao diện mới: Delta X / Dark Purple / Glass
 -- ==========================================
 task.spawn(function()
     local Player = game.Players.LocalPlayer

@@ -1,0 +1,75 @@
+
+--====================================================
+-- NHAT HUB | DELTA ANTI-CHECK
+-- Delta Android | Chỉ kiểm tra 4 URL bị cấm
+--====================================================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local KICK_MESSAGE =
+    "Delta: hệ thống anti-check bảo vệ tài khoản của bạn"
+
+local blacklistedScriptURLs = {
+    "raw.githubusercontent.com/MUshihara/Serenity-hub/main/loader.lua",
+
+    "raw.githubusercontent.com/tienkhanh1/spicy/main/Chilli.lua",
+
+    "raw.githubusercontent.com/tienkhanh1/Venyx/main/VenyxHub",
+
+    "id.tomroblox.com/raw/kairoblox/chilli-x-venyx-viet-hoa-v6-vip-pro98"
+}
+
+local function isURLBlacklisted(url)
+    if type(url) ~= "string" then
+        return false
+    end
+
+    url = string.lower(url)
+
+    for _, blockedURL in ipairs(blacklistedScriptURLs) do
+        if string.find(
+            url,
+            string.lower(blockedURL),
+            1,
+            true
+        ) then
+            return true
+        end
+    end
+
+    return false
+end
+
+if type(hookmetamethod) ~= "function"
+    or type(getnamecallmethod) ~= "function" then
+    warn("[NHAT HUB] Executor không hỗ trợ hook cần thiết.")
+    return
+end
+
+local oldNamecall
+
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+
+    if self == game
+        and (method == "HttpGet" or method == "HttpGetAsync") then
+
+        local args = {...}
+        local url = args[1]
+
+        if isURLBlacklisted(url) then
+            task.defer(function()
+                if LocalPlayer and LocalPlayer.Parent then
+                    LocalPlayer:Kick(KICK_MESSAGE)
+                end
+            end)
+
+            return ""
+        end
+    end
+
+    return oldNamecall(self, ...)
+end)
+
+print("[NHAT HUB] Anti-check đã khởi tạo.")
